@@ -274,4 +274,31 @@ describe('htmltojsx', function() {
         .toBe('<svg><clipPath><feSpotLight><linearGradient /></feSpotLight></clipPath></svg>');
     });
   });
+
+  describe('Hooks', function() {
+    it('should replace nodes with values returned by hook', function() {
+      var converter = new HTMLtoJSX({
+        createClass: false,
+        onNode: function(node) {
+          if (node.nodeType === 1 && node.className === 'remove') {
+            return '';
+          }
+        },
+      });
+      expect(converter.convert('<div><span>1</span><span class="remove">2</span><span>3</span></div>').trim())
+        .toBe('<div><span>1</span><span>3</span></div>');
+    });
+    it('should replace attributes with values returned by hook', function() {
+      var converter = new HTMLtoJSX({
+        createClass: false,
+        onElementAttribute: function(element, attribute) {
+          if (element.className === 'target' && attribute.name === 'data-value-prop') {
+            return 'value={this.props.' + attribute.value + '}';
+          }
+        },
+      });
+      expect(converter.convert('<div><input class="target" data-value-prop="value"/></div>').trim())
+        .toBe('<div><input className="target" value={this.props.value} /></div>');
+    });
+  });
 });

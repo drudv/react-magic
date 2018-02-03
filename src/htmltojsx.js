@@ -307,6 +307,14 @@ var HTMLtoJSX = function(config) {
   if (!this.config.indent) {
     this.config.indent = '  ';
   }
+
+  var noop = function() {};
+  if (!this.config.onNode) {
+    this.config.onNode = noop;
+  }
+  if (!this.config.onElementAttribute) {
+    this.config.onElementAttribute = noop;
+  }
 };
 HTMLtoJSX.prototype = {
   /**
@@ -428,6 +436,11 @@ HTMLtoJSX.prototype = {
    * @param {Node} node
    */
   _visit: function(node) {
+    var customString = this.config.onNode(node);
+    if (typeof customString === 'string') {
+      this.output += customString;
+      return;
+    }
     this._beginVisit(node);
     this._traverse(node);
     this._endVisit(node);
@@ -496,7 +509,10 @@ HTMLtoJSX.prototype = {
     var tagName = jsxTagName(node.tagName);
     var attributes = [];
     for (var i = 0, count = node.attributes.length; i < count; i++) {
-      attributes.push(this._getElementAttribute(node, node.attributes[i]));
+      var attribute = this._getElementAttribute(node, node.attributes[i]);
+      if (attribute) {
+        attributes.push(attribute);
+      }
     }
 
     if (tagName === 'textarea') {
@@ -610,6 +626,10 @@ HTMLtoJSX.prototype = {
    * @return {string}
    */
   _getElementAttribute: function(node, attribute) {
+    var customString = this.config.onElementAttribute(node, attribute);
+    if (typeof customString === 'string') {
+      return customString;
+    }
     switch (attribute.name) {
       case 'style':
         return this._getStyleAttribute(attribute.value);
